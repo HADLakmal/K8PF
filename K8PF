@@ -1,0 +1,68 @@
+#!/bin/bash
+
+IFS=$'\n\t'
+
+NOW=$(date +"%F")
+NOWT=$(date +"%T")
+USER=$(whoami)
+APPDIR="${HOME}"/.kubePF
+
+SCRIPT=`basename ${BASH_SOURCE[0]}`
+
+help() {
+  cat <<EOF
+${SCRIPT}(1)
+NAME
+    ${SCRIPT} - Quick k8 port-forward.
+EOF
+}
+
+# Cluster select from the list
+kube_list() {
+  kubectl config get-contexts -o=name 
+}
+
+kube_number_list() {
+  kube_list | nl -bt
+}
+
+kube_cluster_select() {
+    kube_list | sed -n ${CLUSTER}p
+}
+
+# select name space from the cluster
+name_space_list() {
+  kubectl --context=$(kube_cluster_select) get namespaces -o=jsonpath='{range .items[*].metadata.name}{@}{"\n"}{end}'
+}
+
+name_space_number_list() {
+  name_space_list | nl -v1
+}
+
+name_space_select() {
+    name_space_list | sed -n ${NAMESPACE}p
+}
+
+# select pod from the name space
+pod_list() {
+  kubectl --context=$(kube_cluster_select) --namespace=$(name_space_select) get pods -o=jsonpath='{range .items[*].metadata.name}{@}{"\n"}{end}'
+}
+
+pod_number_list() {
+  pod_list | nl
+}
+
+pod_select() {
+  pod_list | sed -n ${POD}p
+}
+
+# port forward 
+port_forward(){
+  kubectl --context=$(kube_cluster_select) --namespace=$(name_space_select) port-forward $(pod_select) ${PORT} ${PORT}
+}
+let PORT
+echo "K8 cluster list "; kube_number_list; read CLUSTER;
+echo "Namespace list "; name_space_number_list; read NAMESPACE;
+echo 'POD list '; pod_number_list; read POD;
+echo "Give which port need to be forwarded "; read PORT
+port_forward
