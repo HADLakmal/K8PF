@@ -2,6 +2,9 @@
 
 IFS=$'\n\t'
 
+LOGS="logs"
+PF="port forward"
+LOGSF="logs streamed"
 NOW=$(date +"%F")
 NOWT=$(date +"%T")
 USER=$(whoami)
@@ -56,13 +59,42 @@ pod_select() {
   pod_list | sed -n ${POD}p
 }
 
+kube_options(){
+  echo -e $LOGS'\n'$LOGSF'\n'$PF | nl
+}
+
+# logs
+logs(){
+  kubectl --context=$(kube_cluster_select) --namespace=$(name_space_select) logs $(pod_select)
+}
+
+# logs streamed
+logs_streamed(){
+  kubectl --context=$(kube_cluster_select) --namespace=$(name_space_select) logs -f $(pod_select)
+}
+
+
 # port forward 
 port_forward(){
   kubectl --context=$(kube_cluster_select) --namespace=$(name_space_select) port-forward $(pod_select) ${PORT} ${PORT}
 }
 let PORT
+let OPTION
 echo "K8 cluster list "; kube_number_list; read CLUSTER;
 echo "Namespace list "; name_space_number_list; read NAMESPACE;
 echo 'POD list '; pod_number_list; read POD;
-echo "Give which port need to be forwarded "; read PORT
+echo "kube options "; kube_options; read OPTION
+# pod logs 
+if [[ $OPTION == 1 ]]; then
+  echo "logs of ${POD}";logs
+fi
+# pod streamed log
+if [[ $OPTION == 2 ]]; then
+  echo "streamed logs ${POD}"; logs_streamed
+
+fi
+# port forward pod
+if [[ $OPTION == 3 ]]; then
+  echo "port forward ${POD}"; read PORT
 port_forward
+fi
