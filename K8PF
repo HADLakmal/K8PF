@@ -76,9 +76,10 @@ logs_streamed(){
 
 # port forward 
 port_forward(){
-  kubectl --context=$(kube_cluster_select) --namespace=$(name_space_select) port-forward $(pod_select) ${PORT} ${PORT}
+  kubectl --context=$(kube_cluster_select) --namespace=$(name_space_select) port-forward $(pod_select) ${LISTNING_PORT}:${TARGET_PORT}
 }
-let PORT
+let TARGET_PORT
+let LISTNING_PORT
 let OPTION
 echo "K8 cluster list "; kube_number_list; read CLUSTER;
 echo "Namespace list "; name_space_number_list; read NAMESPACE;
@@ -86,15 +87,16 @@ echo 'POD list '; pod_number_list; read POD;
 echo "kube options "; kube_options; read OPTION
 # pod logs 
 if [[ $OPTION == 1 ]]; then
-  echo "logs of ${POD}";logs
+  echo "logs of $(pod_select)";logs
 fi
 # pod streamed log
 if [[ $OPTION == 2 ]]; then
-  echo "streamed logs ${POD}"; logs_streamed
+  echo "streamed logs $(pod_select)"; logs_streamed
 
 fi
 # port forward pod
 if [[ $OPTION == 3 ]]; then
-  echo "port forward ${POD}"; read PORT
+  echo "port forward $(pod_select)-> target port"; read TARGET_PORT
+  echo "listning port"; read LISTNING_PORT
 port_forward
 fi
